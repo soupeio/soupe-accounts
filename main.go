@@ -3,9 +3,11 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 
 	"gopkg.in/gin-gonic/gin.v1"
+	redis "gopkg.in/redis.v5"
 )
 
 type Register struct {
@@ -32,6 +34,15 @@ func GenerateRandomString(s int) (string, error) {
 }
 
 func main() {
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	pong, err := client.Ping().Result()
+	fmt.Println(pong, err)
+
 	// Creates a gin router with default middleware:
 	// logger and recovery (crash-free) middleware
 	router := gin.Default()
@@ -41,6 +52,16 @@ func main() {
 
 	router.GET("/register", func(c *gin.Context) {
 		cookie, _ := c.Cookie("id")
+
+		val, err := client.Get(cookie).Result()
+		if err == redis.Nil {
+			fmt.Println("key does not exists")
+		} else if err != nil {
+			panic(err)
+		} else {
+			fmt.Println("key", val)
+		}
+
 		c.HTML(http.StatusOK, "register.tmpl", gin.H{"cookie": cookie})
 	})
 
@@ -59,6 +80,11 @@ func main() {
 
 	router.GET("/get_token", func(c *gin.Context) {
 		random_bytes, _ := GenerateRandomString(128)
+
+		err := client.Set(random_bytes, "hukl", 0).Err()
+		if err != nil {
+			panic(err)
+		}
 
 		c.SetCookie("id", random_bytes, 3600, "/", "", false, false)
 
