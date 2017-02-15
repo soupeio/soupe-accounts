@@ -1,5 +1,5 @@
 hash: e5c67d62b6f1a805e756de14245241a5e510b32c33e15a68f6f80e2b22712fa6
-updated: 2017-02-15T11:46:30.247506374+01:00
+updated: 2017-02-15T21:09:42.129741351+01:00
 imports:
 - name: github.com/gin-gonic/gin
   version: e2212d40c62a98b388a5eb48ecbdcf88534688ba
