@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-contrib/multitemplate"
+
 	"gopkg.in/gin-gonic/gin.v1"
 	redis "gopkg.in/redis.v5"
 )
@@ -17,6 +19,11 @@ type Register struct {
 	PasswordConfirmation string `form:"password_confirmation" binding:"required"`
 }
 
+// Setup global variable for redis connection
+// Needs a better abstraction later, maybe
+var db *redis.Client
+
+// Wrapper functions to create secure random bytes
 func GenerateRandomBytes(n int) ([]byte, error) {
 	b := make([]byte, n)
 	_, err := rand.Read(b)
@@ -33,68 +40,76 @@ func GenerateRandomString(s int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), err
 }
 
-func main() {
-	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+// Load nested templates
+func createMyRender() multitemplate.Render {
+	r := multitemplate.New()
+	r.AddFromFiles("index", "templates/layout.tmpl", "templates/index.tmpl")
+	r.AddFromFiles("register", "templates/layout.tmpl", "templates/register.tmpl")
+	r.AddFromFiles("register_success", "templates/layout.tmpl", "templates/register_success.tmpl")
 
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
+	return r
+}
 
-	// Creates a gin router with default middleware:
-	// logger and recovery (crash-free) middleware
-	router := gin.Default()
-	router.LoadHTMLGlob("templates/*")
+// Handler definitions
+func index_handler(c *gin.Context) {
+	c.HTML(http.StatusOK, "index", gin.H{})
+}
 
-	router.Static("/assets", "./assets")
+func register_handler(c *gin.Context) {
+	cookie, _ := c.Cookie("id")
 
-	router.GET("/register", func(c *gin.Context) {
-		cookie, _ := c.Cookie("id")
+	val, err := db.Get(cookie).Result()
+	if err == redis.Nil {
+		fmt.Println("key does not exists")
+	} else if err != nil {
+		panic(err)
+	} else {
+		fmt.Println("key", val)
+	}
 
-		val, err := client.Get(cookie).Result()
-		if err == redis.Nil {
-			fmt.Println("key does not exists")
-		} else if err != nil {
-			panic(err)
-		} else {
-			fmt.Println("key", val)
-		}
+	c.HTML(http.StatusOK, "register", gin.H{"cookie": cookie})
+}
 
-		c.HTML(http.StatusOK, "register.tmpl", gin.H{"cookie": cookie})
-	})
-
-	router.POST("/register", func(c *gin.Context) {
-
-		var form Register
-		if c.Bind(&form) == nil {
-			c.HTML(http.StatusOK, "register_success.tmpl", gin.H{
-				"username": form.UserName,
-				"email":    form.Email,
-				"password": form.Password,
-			})
-		}
-
-	})
-
-	router.GET("/get_token", func(c *gin.Context) {
+func register_submit_handler(c *gin.Context) {
+	var form Register
+	if c.Bind(&form) == nil {
 		random_bytes, _ := GenerateRandomString(128)
 
-		err := client.Set(random_bytes, "hukl", 0).Err()
+		err := db.Set(random_bytes, "hukl", 0).Err()
 		if err != nil {
 			panic(err)
 		}
 
 		c.SetCookie("id", random_bytes, 3600, "/", "", false, false)
 
-		c.HTML(http.StatusOK, "get_token.tmpl", gin.H{
-			"token_string": "Hallo",
-			"token":        "Ballo",
-			"claims":       random_bytes,
+		c.HTML(http.StatusOK, "register_success", gin.H{
+			"username": form.UserName,
+			"email":    form.Email,
+			"password": form.Password,
 		})
+	}
+}
 
+func main() {
+	db = redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
 	})
+
+	pong, err := db.Ping().Result()
+	fmt.Println(pong, err)
+
+	// Creates a gin router with default middleware:
+	// logger and recovery (crash-free) middleware
+	router := gin.Default()
+	router.HTMLRender = createMyRender()
+
+	router.Static("/assets", "./assets")
+
+	router.GET("/", index_handler)
+	router.GET("/register", register_handler)
+	router.POST("/register", register_submit_handler)
 
 	// By default it serves on :8080 unless a
 	// PORT environment variable was defined.

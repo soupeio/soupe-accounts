@@ -1,6 +1,8 @@
-hash: 77ab8559f33b6ebec8bade2193a17b1ee44d326c142dd181378a6bbd69c619bb
-updated: 2017-02-15T21:26:38.580200706+01:00
+hash: cfa941ec5a12025a4fe4644164053e4b4dc43f3214c17a9652d526c1cdb1b38d
+updated: 2017-02-17T18:14:31.146478089+01:00
 imports:
+- name: github.com/gin-contrib/multitemplate
+  version: 7a0692bde41e2af6e7811ba69bd05a5232351492
 - name: github.com/gin-gonic/gin
   version: e2212d40c62a98b388a5eb48ecbdcf88534688ba
   subpackages:
@@ -28,6 +30,12 @@ imports:
   version: c193cecd124b5cc722d7ee5538e945bdb3348435
 - name: gopkg.in/redis.v5
   version: 2fe9c5cc0a8da9faeba3a45511a4ece8f7e37dc2
+  subpackages:
+  - internal
+  - internal/consistenthash
+  - internal/hashtag
+  - internal/pool
+  - internal/proto
 - name: gopkg.in/yaml.v2
   version: a3f3340b5840cee44f372bddb5880fcbc419b46a
 testImports: []
