@@ -5,17 +5,20 @@
     <title>Soupe.io</title>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="/assets/bootstrap.min.css" />
+    <link rel="stylesheet" href="/assets/style.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <style>
-      body {
-        margin-left: 60px;
-        margin-right: 60px;
-      }
-    </style>
   </head>
 
   <body>
-    {{template "content" }}
+
+    <nav>
+      <ul>
+        <li>Home</li>
+        <li>Login</li>
+        <li>Register</li>
+      </ul>
+    </nav>
+    {{template "content" .}}
   </body>
 </html>

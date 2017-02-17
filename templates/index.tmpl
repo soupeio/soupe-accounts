@@ -1,3 +1,13 @@
 {{define "content"}}
 <h1>Icke dette kieke mal</h1>
+
+<h3>User: {{.user}}</h3>
+
+{{if .user}}
+einjeloggt
+{{else}}
+ausjeloggt
+{{end}}
+
+
 {{end}}

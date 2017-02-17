@@ -52,7 +52,11 @@ func createMyRender() multitemplate.Render {
 
 // Handler definitions
 func index_handler(c *gin.Context) {
-	c.HTML(http.StatusOK, "index", gin.H{})
+	cookie, _ := c.Cookie("id")
+
+	val, _ := db.Get(cookie).Result()
+
+	c.HTML(http.StatusOK, "index", gin.H{"user": val})
 }
 
 func register_handler(c *gin.Context) {
